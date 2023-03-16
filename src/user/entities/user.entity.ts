@@ -3,7 +3,9 @@ import {
   Column,
   PrimaryGeneratedColumn,
   CreateDateColumn,
+  OneToMany,
 } from 'typeorm';
+import { CommentEntity } from '../../comment/entities/comment.entity';
 
 @Entity('users')
 export class UserEntity {
@@ -19,4 +21,9 @@ export class UserEntity {
   createdAt: Date;
   @CreateDateColumn({ type: 'timestamp' })
   updatedAt: Date;
+  @OneToMany(() => CommentEntity, (comment) => comment.user, {
+    eager: false,
+    nullable: true,
+  })
+  comments: CommentEntity[];
 }

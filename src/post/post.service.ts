@@ -1,20 +1,21 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { PostEntity } from './entities/post.entity';
 import { Repository } from 'typeorm';
 import { SearchPostDto } from './dto/search-post.dto';
+import { UserEntity } from '../user/entities/user.entity';
 
 @Injectable()
 export class PostService {
   constructor(
     @InjectRepository(PostEntity) private repository: Repository<PostEntity>,
   ) {}
-
-  create(dto: CreatePostDto) {
-    return this.repository.save(dto);
-  }
 
   findAll() {
     return this.repository.find({
@@ -83,23 +84,49 @@ export class PostService {
     return this.repository.findOne({ where: { id } });
   }
 
-  async update(id: number, dto: UpdatePostDto) {
-    const find = await this.repository.update(id, dto);
+  create(dto: CreatePostDto, userId: number) {
+    const firstParagraph = dto.body.find((obj) => obj.type === 'paragraph')
+      ?.data.text;
 
-    if (!find) {
-      return new NotFoundException('Статья не найдена');
-    }
-
-    return find;
+    return this.repository.save({
+      title: dto.title,
+      body: dto.body,
+      tags: dto.tags,
+      user: { id: userId },
+      description: firstParagraph || '',
+    });
   }
 
-  async remove(id: number) {
-    const find = await this.repository.delete(id);
+  async update(id: number, dto: UpdatePostDto, userId: number) {
+    const find = await this.repository.findOne({ where: { id: +id } });
 
     if (!find) {
-      return new NotFoundException('Статья не найдена');
+      throw new NotFoundException('Статья не найдена');
     }
 
-    return find;
+    const firstParagraph = dto.body.find((obj) => obj.type === 'paragraph')
+      ?.data?.text;
+
+    return this.repository.update(id, {
+      title: dto.title,
+      body: dto.body,
+      tags: dto.tags,
+      user: { id: userId },
+      description: firstParagraph || '',
+    });
+  }
+
+  async remove(id: number, userId: number) {
+    const find = await this.repository.findOne({ where: { id } });
+
+    if (!find) {
+      throw new NotFoundException('Статья не найдена');
+    }
+
+    if (find.user.id !== userId) {
+      throw new ForbiddenException('Нет доступа к этой статье!');
+    }
+
+    return this.repository.delete(id);
   }
 }

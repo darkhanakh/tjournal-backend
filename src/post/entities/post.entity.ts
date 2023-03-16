@@ -3,7 +3,10 @@ import {
   Column,
   PrimaryGeneratedColumn,
   CreateDateColumn,
+  ManyToOne,
 } from 'typeorm';
+import { OutputBlockData } from '../dto/create-post.dto';
+import { UserEntity } from '../../user/entities/user.entity';
 
 @Entity('posts')
 export class PostEntity {
@@ -11,8 +14,12 @@ export class PostEntity {
   id: number;
   @Column()
   title: string;
+  @Column({ type: 'jsonb' })
+  body: OutputBlockData[];
+
   @Column()
-  body: string;
+  description: string;
+
   @Column({ nullable: true })
   tags?: string;
   @CreateDateColumn({ type: 'timestamp' })
@@ -23,4 +30,7 @@ export class PostEntity {
     default: 0,
   })
   views: number;
+
+  @ManyToOne(() => UserEntity, { eager: true, nullable: false })
+  user: UserEntity;
 }

@@ -27,6 +27,9 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       throw new UnauthorizedException('У вас не доступа к этой странице');
     }
 
-    return user;
+    return {
+      id: user.id,
+      email: user.email,
+    };
   }
 }
